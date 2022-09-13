@@ -1,0 +1,198 @@
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"
+        integrity="sha512-VJ6+sp2E5rFQk05caiXXzQd1wBABpjEj1r5kMiLmGAAgwPItw1YpqsCCBtq8Yr1x6C49/mTpRdXtq8O2RcZhlQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="/js/util.js"></script>
+</head>
+<div id="cardBoard"></div>
+<div id="question" contenteditable="true" onblur="sendQuestion(this.innerText)"></div>
+<div id="cardList"></div>
+<div id="scaler">
+    <div class="button" onclick="scale(lastGrabbed,1.1)">+</div>
+    <div style="height: 5px;"></div>
+    <div class="button" onclick="scale(lastGrabbed,1/1.1)">-</div>
+</div>
+<script>
+    const socketio = io.connect('/stream');
+    const room = document.location.pathname.split('/s')[0].split('/').slice(-1)[0];
+    const socket = socketio.on('connect', function () {
+        socketId = socket.io.engine.id;
+        socket.emit('subscribe', { room: room, socketId: socketId, screen: true });
+        socket.on('whatsQuestion', (data) => {
+            sendQuestion(question.innerText);
+        });
+        socket.on('card', (data) => {
+            addCard(data);
+        });
+    });
+
+    function sendQuestion(question) {
+        socket.emit('question', { question: question });
+    }
+
+    async function addCard(data) {
+        var e = document.createElement('div');
+        e.classList = 'card inList';
+        if (data.img) {
+            var img = document.createElement('img');
+            if (data.drawn) {
+                e.classList.add('drawn');
+            }
+            img.src = data.img;
+            e.appendChild(img);
+            e.classList.add('img')
+        } else if (data.text) {
+            e.innerText = data.text;
+        }
+        if (data.bgc) e.style.backgroundColor = data.bgc;
+        cardList.appendChild(e);
+        await new Promise(r => setTimeout(r, 100));
+        if (e.innerText) fit(e);
+    }
+
+    var follow = null;
+    var lastGrabbed = null;
+
+    document.addEventListener('touchmove', (e) => { e.preventDefault() });
+    document.addEventListener('pointerdown', async (e) => {
+        if (e.target.classList.contains('card')) {
+            if (e.target.classList.contains('inList')) {
+                e.target.classList.remove('inList');
+                cardBoard.appendChild(e.target);
+            }
+            follow = e.target;
+            follow.classList.add('grabbing');
+            doFollow(e);
+        }
+    })
+    document.addEventListener('pointermove', (e) => {
+        doFollow(e);
+    })
+    document.addEventListener('pointerup', (e) => {
+        if (follow) {
+            lastGrabbed = follow;
+            follow.classList.remove('grabbing');
+        }
+        follow = null;
+    })
+
+    function doFollow(e) {
+        if (follow) {
+            var rec = follow.getBoundingClientRect();
+            follow.style.top = e.clientY - (rec.height / 2);
+            follow.style.left = e.clientX - (rec.width / 2);
+        }
+    }
+
+    function scale(el, scale) {
+        var map = el.computedStyleMap();
+        var rec = el.getBoundingClientRect();
+        el.style.fontSize = map.get('font-size').value * scale;
+        el.style.height = (rec.height - (map.get('padding-top').value * 2)) * scale;
+        el.style.width = (rec.width - (map.get('padding-left').value * 2)) * scale;
+        el.style.paddingTop = map.get('padding-top').value * scale;
+        el.style.paddingBottom = map.get('padding-bottom').value * scale;
+        el.style.paddingLeft = map.get('padding-left').value * scale;
+        el.style.paddingRight = map.get('padding-right').value * scale;
+
+    }
+
+</script>
+
+<style>
+    .card {
+        background-color: #ffffbb;
+        padding: 10px;
+        padding-left: 21px;
+        padding-right: 21px;
+        user-select: none;
+        cursor: grab;
+        text-align: center;
+        overflow: hidden;
+        display: grid;
+        align-content: center;
+    }
+
+    .card.grabbing {
+        cursor: grabbing;
+    }
+
+    #cardBoard {
+        position: relative;
+        top: 0px;
+        left: 0px;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    #cardBoard .card {
+        position: absolute;
+    }
+
+    .card {
+        height: 80px;
+        width: 180px;
+    }
+
+    .card.drawn {
+        padding: 0px;
+        height: 100px;
+        width: 222px;
+    }
+
+    #cardList {
+        position: fixed;
+        bottom: 0px;
+        left: 0px;
+        height: 10vh;
+        display: flex;
+        align-items: flex-start;
+        flex-direction: row;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .card.img img {
+        pointer-events: none;
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+    }
+
+    div#question {
+        height: 10vh;
+        font-size: 9vh;
+        background: #d1d1d136;
+        color: white;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 100vw;
+        text-align: center;
+        padding: 10px;
+    }
+
+    #scaler {
+        position: fixed;
+        right: 5px;
+        bottom: 5px;
+        user-select: none;
+    }
+
+    #scaler div.button {
+        padding: 1vmin;
+        border-radius: 20px;
+        height: 2vmin;
+        font-size: 2vmin;
+        width: 2vmin;
+        text-align: center;
+        background-color: lightblue;
+        cursor: pointer;
+    }
+
+    body {
+        background-color: #000000;
+        margin: 0px;
+    }
+</style>
