@@ -54,7 +54,9 @@
     var follow = null;
     var lastGrabbed = null;
 
-    document.addEventListener('touchmove', (e) => { e.preventDefault() });
+    document.addEventListener('touchmove', (e) => { 
+        if(e.target.classList.contains('card')) e.preventDefault()
+     }, { passive: false } );
     document.addEventListener('pointerdown', async (e) => {
         if (e.target.classList.contains('card')) {
             if (e.target.classList.contains('inList')) {
