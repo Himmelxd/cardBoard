@@ -7,6 +7,10 @@ const io = new Server(server);
 
 app.use('/js', express.static(__dirname + '/web/js'));
 
+app.get('/', (req, res) => {
+    res.end(400);
+});
+
 app.get('/*/s', (req, res) => {
     res.sendFile(__dirname + '/web/show.html');
 });
