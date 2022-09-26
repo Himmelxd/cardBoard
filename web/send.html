@@ -27,6 +27,7 @@
 </div>
 <div id="pref">
 
+    <div id="colorList"></div>
 </div>
 <button onclick="sendCard();">Send</button>
 <script>
@@ -44,7 +45,7 @@
 
     async function sendCard() {
         if (card.classList.contains('pen')) {
-            send({ drawn: true, img: document.querySelector('#penInput canvas').toDataURL() });
+            send({ drawn: true, img: document.querySelector('#penInput canvas').toDataURL(), bgc: card.style.backgroundColor });
         } else {
             send({ text: textInput.innerText });
         }
@@ -100,6 +101,18 @@
             oldy = null;
         }
     })
+
+    for (const color of colors) {
+        var e = document.createElement('div');
+        e.style.backgroundColor = color;
+        e.setAttribute('onclick', `setColor(this.style.backgroundColor)`);
+        colorList.appendChild(e);
+    }
+    colorList.querySelector('div').click();
+
+    function setColor(color) {
+        card.style.backgroundColor = color;
+    }
 </script>
 
 <style>
@@ -114,7 +127,6 @@
     div#penInput {
         width: 100%;
         height: 100%;
-        background-color: aqua;
         display: none;
     }
 
@@ -158,7 +170,6 @@
         width: 90vmin;
         height: 40vmin;
         position: relative;
-        background-color: #ffff57;
         font-size: 20vmin;
         border: solid black 2px;
         text-align: center;
@@ -227,5 +238,21 @@
             transform: scale(1);
             opacity: 1;
         }
+    }
+
+    #colorList > div {
+        width: 5vmin;
+        min-width: 40px;
+        height: 5vmin;
+        min-height: 40px;
+        border-radius: 30%;
+    }
+
+    div#colorList {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+        place-content: center;
     }
 </style>
